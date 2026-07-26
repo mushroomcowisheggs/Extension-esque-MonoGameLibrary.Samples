@@ -626,7 +626,8 @@ builder.AddModule(new MyModule(logger, profiler));
 2. **The `?? throw new` pattern in constructors is forbidden.** A standalone null-check statement must be used.
 3. **Expression-bodied definitions (`=>`) for properties, methods, and read-only members are not allowed.** Full block bodies `{ get { ... } }` or `{ return ...; }` must be used.
 4. **All conditional logic must use complete `if-else` blocks.** The ternary operator `? :` can be used in simple assignment scenarios, but `if-else` is recommended for clarity in complex situations. 
-5. **Loops and exception handling must use braces `{}`**, even when the body contains only a single statement.
+5. **Loops and exception handling must use braces `{}`**, even when the body contains only a single statement. 
+6. **Use explicit anonymous delegate syntax** (delegate { ... }) instead of lambda expressions (e.g., (x) => x.Foo) for all delegate parameters. 
 
 ### Why This Design?
 

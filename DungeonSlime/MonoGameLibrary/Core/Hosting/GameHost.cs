@@ -20,6 +20,11 @@ namespace MonoGameLibrary.Core.Hosting {
         private readonly List<IUpdateable> _listUpdateableModules = new List<IUpdateable>();
         private readonly List<IDrawable> _listDrawableModules = new List<IDrawable>();
         
+        private List<IUpdateable> _cachedUpdateablesSorted = new List<IUpdateable>();
+        private List<IDrawable> _cachedDrawablesSorted = new List<IDrawable>();
+        private List<IUpdateable> _backBufferUpdateables = new List<IUpdateable>();
+        private List<IDrawable> _backBufferDrawables = new List<IDrawable>();
+        
         private Optional<IContentService> _serviceContent;
         
         // Lifecycle state flags
@@ -27,6 +32,10 @@ namespace MonoGameLibrary.Core.Hosting {
         private bool _flagIsFaulted = false;
         private bool _flagDisposing = false;
         private bool _flagDisposed = false;
+        
+        // Dirty flags
+        private bool _flagUpdateOrderDirty = true;
+        private bool _flagDrawOrderDirty = true;
         
         // Concurrency tracking
         private int _countActiveOperations = 0;
@@ -116,9 +125,11 @@ namespace MonoGameLibrary.Core.Hosting {
                 }
                 if (module is IUpdateable updateable) {
                     _listUpdateableModules.Add(updateable);
+                    _flagUpdateOrderDirty = true;
                 }
                 if (module is IDrawable drawable) {
                     _listDrawableModules.Add(drawable);
+                    _flagDrawOrderDirty = true;
                 }
             }
         }
@@ -181,68 +192,91 @@ namespace MonoGameLibrary.Core.Hosting {
         public void Update(FrameTime timeFrame) {
             EnterOperation();
             try {
-                List<IUpdateable> listSortedModules;
+                List<IUpdateable> listToIterate;
+                bool flagNeedSort = false;
                 lock (_lock) {
                     if (_flagIsFaulted)
-                        throw new InvalidOperationException(
-                            "Cannot update a GameHost that is in a faulted state. "
-                        );
-                    if (!_flagIsInitialized) {
-                        throw new InvalidOperationException(
-                            "Initialize must be called before Update. "
-                        );
+                        throw new InvalidOperationException("Cannot update a GameHost that is in a faulted state.");
+                    if (!_flagIsInitialized)
+                        throw new InvalidOperationException("Initialize must be called before Update.");
+                    if (_flagUpdateOrderDirty) {
+                        flagNeedSort = true;
+                        _backBufferUpdateables.Clear();
+                        _backBufferUpdateables.AddRange(_listUpdateableModules);
                     }
-
-                    // Copy and sort to prevent modification during enumeration.
-                    listSortedModules = _listUpdateableModules.OrderBy( delegate(IUpdateable m) { return m.Order; } ).ToList();
                 }
-
-                foreach (IUpdateable module in listSortedModules) {
-                    if (!module.Enabled) { continue; }
-                    SafeExecute("Update", module, delegate { module.Update(timeFrame); } );
+                if (flagNeedSort) {
+                    _backBufferUpdateables.Sort(delegate(IUpdateable a, IUpdateable b) {
+                        return a.Order.CompareTo(b.Order);
+                    });
+                    lock (_lock) {
+                        if (_flagUpdateOrderDirty) {
+                            // Swap buffers
+                            List<IUpdateable> temp = _cachedUpdateablesSorted;
+                            _cachedUpdateablesSorted = _backBufferUpdateables;
+                            _backBufferUpdateables = temp;
+                            _flagUpdateOrderDirty = false;
+                        }
+                    }
                 }
-            }
-            finally {
+                lock (_lock) {
+                    listToIterate = _cachedUpdateablesSorted;
+                }
+                foreach (IUpdateable module in listToIterate) {
+                    if (!module.Enabled) continue;
+                    SafeExecute("Update", module, delegate { module.Update(timeFrame); });
+                }
+            } finally {
                 ExitOperation();
             }
         }
-
+        
         /// <inheritdoc />
         public void Draw(FrameTime timeFrame, IRenderContext contextRender) {
             if (contextRender == null) {
                 throw new ArgumentNullException(nameof(contextRender));
             }
-            
             EnterOperation();
             try {
-                List<IDrawable> listSortedModules;
+                List<IDrawable> listToIterate;
+                bool flagNeedSort = false;
                 lock (_lock) {
-                    if (_flagIsFaulted) {
-                        throw new InvalidOperationException(
-                            "Cannot draw a GameHost that is in a faulted state. "
-                        );
+                    if (_flagIsFaulted)
+                        throw new InvalidOperationException("Cannot draw a GameHost that is in a faulted state.");
+                    if (!_flagIsInitialized)
+                        throw new InvalidOperationException("Initialize must be called before Draw.");
+                    if (_flagDrawOrderDirty) {
+                        flagNeedSort = true;
+                        _backBufferDrawables.Clear();
+                        _backBufferDrawables.AddRange(_listDrawableModules);
                     }
-                    if (!_flagIsInitialized) {
-                        throw new InvalidOperationException(
-                            "Initialize must be called before Draw. "
-                        );
-                    }
-                    
-                    listSortedModules = _listDrawableModules.OrderBy( delegate(IDrawable m) { return m.Order; } ).ToList();
                 }
-                
-                foreach (IDrawable module in listSortedModules) {
-                    if (!module.Visible) {
-                        continue;
+                if (flagNeedSort) {
+                    _backBufferDrawables.Sort(delegate(IDrawable a, IDrawable b) {
+                        return a.Order.CompareTo(b.Order);
+                    });
+                    lock (_lock) {
+                        if (_flagDrawOrderDirty) {
+                            // Swap buffers
+                            List<IDrawable> temp = _cachedDrawablesSorted;
+                            _cachedDrawablesSorted = _backBufferDrawables;
+                            _backBufferDrawables = temp;
+                            _flagDrawOrderDirty = false;
+                        }
                     }
-                    SafeExecute("Draw", module, delegate { module.Draw(timeFrame, contextRender); } );
                 }
-            }
-            finally {
+                lock (_lock) {
+                    listToIterate = _cachedDrawablesSorted;
+                }
+                foreach (IDrawable module in listToIterate) {
+                    if (!module.Visible) continue;
+                    SafeExecute("Draw", module, delegate { module.Draw(timeFrame, contextRender); });
+                }
+            } finally {
                 ExitOperation();
             }
         }
-
+        
         /// <summary>
         /// Increments the active operation counter and registers the current thread. 
         /// Must be called before any lifecycle method logic. 
@@ -409,6 +443,12 @@ namespace MonoGameLibrary.Core.Hosting {
                     _listLoadableModules.Clear();
                     _listUpdateableModules.Clear();
                     _listDrawableModules.Clear();
+                    _cachedUpdateablesSorted.Clear();
+                    _cachedDrawablesSorted.Clear();
+                    _backBufferUpdateables.Clear();
+                    _backBufferDrawables.Clear();
+                    _flagUpdateOrderDirty = true;
+                    _flagDrawOrderDirty = true;
                 }
             }
         }

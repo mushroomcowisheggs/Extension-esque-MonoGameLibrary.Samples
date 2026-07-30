@@ -34,7 +34,7 @@ namespace MonoGameLibrary.Adapters.MonoGame.Audio {
                 throw new ArgumentNullException(nameof(effectSound));
             }
             
-            service.PlaySound(new MonoGameAudioClip(effectSound), volume, pitch, pan, flagLoop);
+            service.PlayAudioClip(new MonoGameAudioClip(effectSound), volume, pitch, pan, flagLoop);
         }
         
         /// <summary>
@@ -56,7 +56,7 @@ namespace MonoGameLibrary.Adapters.MonoGame.Audio {
                 throw new ArgumentNullException(nameof(song));
             }
             
-            service.PlayMusic(new MonoGameAudioTrack(song), flagRepeat);
+            service.PlayAudioTrack(new MonoGameAudioTrack(song), flagRepeat);
         }
     }
 }

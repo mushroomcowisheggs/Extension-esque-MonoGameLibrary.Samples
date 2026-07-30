@@ -108,8 +108,8 @@ namespace MonoGameLibrary.Extensions.Scenes {
                 return;
             }
             
-            _flagDisposed = true;
             Dispose(true);
+            _flagDisposed = true;
             GC.SuppressFinalize(this);
         }
         
@@ -121,9 +121,8 @@ namespace MonoGameLibrary.Extensions.Scenes {
             if (_flagDisposed) { return; }
             if (flagDisposing) {
                 // Ensure that all scene-specific resources are unloaded
-                if (ContentService is IDisposable contentDisposable) {
-                    contentDisposable.Dispose();
-                }
+                IDisposable contentDisposable = ContentService;
+                contentDisposable.Dispose();
             }
             
             _flagDisposed = true;

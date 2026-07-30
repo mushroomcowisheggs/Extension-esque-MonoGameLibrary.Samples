@@ -56,9 +56,9 @@ namespace MonoGameLibrary.Extensions {
         /// </summary>
         /// <param name="builder">The game builder instance. </param>
         /// <param name="serviceContent">The content service used by scenes. If null, the builder will try to resolve one from its registered services. </param>
+        /// <param name="factoryContent">Optional content service factory for automatic scene content creation. 
         /// <param name="logger">Optional logger for the module. If null, <see cref="NullLogger"/> is used. </param>
         /// <param name="profiler">An optional profiler for performance measurements. </param>
-        /// <param name="factoryContent">Optional content service factory for automatic scene content creation. 
         /// If provided, the scene service will support factory-based scene switching. </param>
         /// <returns>The game builder instance for chaining. </returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> is null. </exception>
@@ -66,9 +66,9 @@ namespace MonoGameLibrary.Extensions {
         public static GameBuilder UseScenes(
                 this GameBuilder builder, 
                 IContentService serviceContent = null, 
+                Optional<IContentServiceFactory> factoryContent = default, 
                 Optional<ILogger> logger = default, 
-                Optional<IProfiler> profiler = default, 
-                Optional<IContentServiceFactory> factoryContent = default
+                Optional<IProfiler> profiler = default
             ) {
             if (builder == null) {
                 throw new System.ArgumentNullException(nameof(builder));
@@ -89,9 +89,22 @@ namespace MonoGameLibrary.Extensions {
                 loggerToUse = NullLogger.Instance;
             }
             
-            var serviceScene = new SceneService(
-                serviceResolvedContent, new Optional<ILogger>(loggerToUse), profiler
-            );
+            SceneService serviceScene;
+            if (factoryContent.HasValue) {
+                serviceScene = new SceneService(
+                    serviceResolvedContent,
+                    factoryContent,
+                    new Optional<ILogger>(loggerToUse),
+                    profiler
+                );
+            } else {
+                serviceScene = new SceneService(
+                    serviceResolvedContent,
+                    new Optional<ILogger>(loggerToUse),
+                    profiler
+                );
+            }
+            
             builder.RegisterService<ISceneService>(serviceScene);
             builder.AddModule(new SceneModule(serviceScene));
             return builder;

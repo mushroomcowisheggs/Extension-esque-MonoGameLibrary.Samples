@@ -608,7 +608,7 @@ builder.AddModule(new MyModule(logger, profiler));
 2. **Place modules in namespaces that correspond to their function**, e.g., `MonoGameLibrary.Audio`, `MonoGameLibrary.Scenes`.
 3. **Avoid vague suffixes such as `Manager` or `System`** unless the class genuinely manages multiple sub-components.
 4. **Each module must reside in its own file**, with the file name matching the class name.
-5. **Public API method names must begin with a verb**, e.g., `PlaySound`, `LoadScene`.
+5. **Public API method names must begin with a verb**, e.g., `PlayAudioClip`, `LoadScene`.
 6. **All camelCase private fields must start with the headword**, which is typically the final word of the corresponding public API, e.g., `_timeFrame`, `_serviceContent`, `_logger`. This is declarative naming: `variable = category word + qualifier`. It reflects "what this data is".
 7. **Local variables also follow headword-first declarative naming**, e.g., `timeFrame`, `serviceContent`, `logger`.
 8. **Public fields typically use natural language order**, e.g., `FrameTime`, `IContentService`, `Logger`. This is substitutional naming: `field = object name (or implied context object) + property name`. It reflects "which property of which object this data belongs to", rather than "we define a field and then qualify it".
@@ -723,7 +723,7 @@ public class AudioModule : ILoadable, IUpdateable, IDisposable {
     /// </summary>
     /// <param name="name">The asset name.</param>
     /// <exception cref="InvalidOperationException">Thrown if the sound has not been loaded.</exception>
-    public void PlaySound(string name) { /* ... */ }
+    public void PlayAudioClip(string name) { /* ... */ }
 }
 ```
 
@@ -745,14 +745,14 @@ public class AudioModule : ILoadable, IUpdateable, IDisposable {
 ```csharp
 // Public Contract (in MonoGameLibrary.Extensions.Audio)
 public interface IAudioService : IUpdateable {
-    void PlaySound(string nameAsset);
+    void PlayAudioClip(string nameAsset);
 }
 
 // Public Implementation (in MonoGameLibrary.Adapters.MonoGame.Audio)
 public class AudioModule : IAudioService, ILoadable, IDisposable {
     private readonly IContentService _serviceContent;
     public AudioModule(IContentService serviceContent) { /* ... */ }
-    public void PlaySound(string nameAsset) { /* ... */ }
+    public void PlayAudioClip(string nameAsset) { /* ... */ }
 }
 
 // Alternative: Factory Pattern (if implementation must be internal)

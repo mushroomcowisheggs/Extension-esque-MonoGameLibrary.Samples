@@ -1,4 +1,5 @@
 using System;
+using DungeonSlime.Input;
 using DungeonSlime.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
@@ -82,6 +83,10 @@ public class TitleScene : Scene {
     private SoundEffect _effectUISound;
     private Panel _panelTitleScreenButtons;
     private Panel _panelOptions;
+    private AnimatedButton _buttonStart;
+    private AnimatedButton _buttonStartSlowly;
+    private OptionsSlider _sliderMusic;
+    private OptionsSlider _sliderSfx;
     
     // The options button used to open the options menu.
     private AnimatedButton _buttonOptions;
@@ -187,21 +192,21 @@ public class TitleScene : Scene {
         _panelTitleScreenButtons.Dock(Gum.Wireframe.Dock.Fill);
         _panelTitleScreenButtons.AddToRoot();
         
-        AnimatedButton buttonStart = new AnimatedButton(_atlas);
-        buttonStart.Anchor(Gum.Wireframe.Anchor.BottomLeft);
-        buttonStart.X = 50;
-        buttonStart.Y = -12;
-        buttonStart.Text = "Start";
-        buttonStart.Click += HandleStartClicked;
-        _panelTitleScreenButtons.AddChild(buttonStart);
+        _buttonStart = new AnimatedButton(_atlas);
+        _buttonStart.Anchor(Gum.Wireframe.Anchor.BottomLeft);
+        _buttonStart.X = 50;
+        _buttonStart.Y = -12;
+        _buttonStart.Text = "Start";
+        _buttonStart.Click += HandleStartClicked;
+        _panelTitleScreenButtons.AddChild(_buttonStart);
         
-        AnimatedButton buttonStartSlowly = new AnimatedButton(_atlas);
-        buttonStartSlowly.Anchor(Gum.Wireframe.Anchor.BottomLeft);
-        buttonStartSlowly.X = 50;
-        buttonStartSlowly.Y = -24;
-        buttonStartSlowly.Text = "StartSlowly";
-        buttonStartSlowly.Click += HandleStartSlowlyClicked;
-        _panelTitleScreenButtons.AddChild(buttonStartSlowly);
+        _buttonStartSlowly = new AnimatedButton(_atlas);
+        _buttonStartSlowly.Anchor(Gum.Wireframe.Anchor.BottomLeft);
+        _buttonStartSlowly.X = 50;
+        _buttonStartSlowly.Y = -24;
+        _buttonStartSlowly.Text = "StartSlowly";
+        _buttonStartSlowly.Click += HandleStartSlowlyClicked;
+        _panelTitleScreenButtons.AddChild(_buttonStartSlowly);
         
         _buttonOptions = new AnimatedButton(_atlas);
         _buttonOptions.Anchor(Gum.Wireframe.Anchor.BottomRight);
@@ -211,7 +216,7 @@ public class TitleScene : Scene {
         _buttonOptions.Click += HandleOptionsClicked;
         _panelTitleScreenButtons.AddChild(_buttonOptions);
         
-        buttonStart.IsFocused = true;
+        _buttonStart.IsFocused = true;
     }
     
     private void HandleStartClicked(object sender, EventArgs arguments) {
@@ -285,33 +290,33 @@ public class TitleScene : Scene {
         textOptions.CustomFontFile = @"fonts/04b_30.fnt";
         _panelOptions.AddChild(textOptions);
         
-        OptionsSlider sliderMusic = new OptionsSlider(_atlas);
-        sliderMusic.Name = "MusicSlider";
-        sliderMusic.Text = "MUSIC";
-        sliderMusic.Anchor(Gum.Wireframe.Anchor.Top);
-        sliderMusic.Y = 30f;
-        sliderMusic.Minimum = 0;
-        sliderMusic.Maximum = 1;
-        sliderMusic.Value = _serviceAudio.SongVolume;
-        sliderMusic.SmallChange = .1;
-        sliderMusic.LargeChange = .2;
-        sliderMusic.ValueChanged += HandleMusicSliderValueChanged;
-        sliderMusic.ValueChangeCompleted += HandleMusicSliderValueChangeCompleted;
-        _panelOptions.AddChild(sliderMusic);
+        _sliderMusic = new OptionsSlider(_atlas);
+        _sliderMusic.Name = "MusicSlider";
+        _sliderMusic.Text = "MUSIC";
+        _sliderMusic.Anchor(Gum.Wireframe.Anchor.Top);
+        _sliderMusic.Y = 30f;
+        _sliderMusic.Minimum = 0;
+        _sliderMusic.Maximum = 1;
+        _sliderMusic.Value = _serviceAudio.SongVolume;
+        _sliderMusic.SmallChange = .1;
+        _sliderMusic.LargeChange = .2;
+        _sliderMusic.ValueChanged += HandleMusicSliderValueChanged;
+        _sliderMusic.ValueChangeCompleted += HandleMusicSliderValueChangeCompleted;
+        _panelOptions.AddChild(_sliderMusic);
         
-        OptionsSlider sfxSlider = new OptionsSlider(_atlas);
-        sfxSlider.Name = "SfxSlider";
-        sfxSlider.Text = "SFX";
-        sfxSlider.Anchor(Gum.Wireframe.Anchor.Top);
-        sfxSlider.Y = 93;
-        sfxSlider.Minimum = 0;
-        sfxSlider.Maximum = 1;
-        sfxSlider.Value = _serviceAudio.SoundEffectVolume;
-        sfxSlider.SmallChange = .1;
-        sfxSlider.LargeChange = .2;
-        sfxSlider.ValueChanged += HandleSfxSliderChanged;
-        sfxSlider.ValueChangeCompleted += HandleSfxSliderChangeCompleted;
-        _panelOptions.AddChild(sfxSlider);
+        _sliderSfx = new OptionsSlider(_atlas);
+        _sliderSfx.Name = "SfxSlider";
+        _sliderSfx.Text = "SFX";
+        _sliderSfx.Anchor(Gum.Wireframe.Anchor.Top);
+        _sliderSfx.Y = 93;
+        _sliderSfx.Minimum = 0;
+        _sliderSfx.Maximum = 1;
+        _sliderSfx.Value = _serviceAudio.SoundEffectVolume;
+        _sliderSfx.SmallChange = .1;
+        _sliderSfx.LargeChange = .2;
+        _sliderSfx.ValueChanged += HandleSfxSliderChanged;
+        _sliderSfx.ValueChangeCompleted += HandleSfxSliderChangeCompleted;
+        _panelOptions.AddChild(_sliderSfx);
         
         _buttonOptionsBack = new AnimatedButton(_atlas);
         _buttonOptionsBack.Text = "BACK";
@@ -429,5 +434,77 @@ public class TitleScene : Scene {
         }
         
         _serviceUserInterface.Draw();
+    }
+    
+    protected override void Dispose(bool flagDisposing) {
+        if (flagDisposing) {
+            // Unsubscribe and dispose Start button
+            if (_buttonStart != null) {
+                _buttonStart.Click -= HandleStartClicked;
+                IDisposable disposable = _buttonStart as IDisposable;
+                if (disposable != null) {
+                    disposable.Dispose();
+                }
+                _buttonStart = null;
+            }
+            
+            // Unsubscribe and dispose StartSlowly button
+            if (_buttonStartSlowly != null) {
+                _buttonStartSlowly.Click -= HandleStartSlowlyClicked;
+                IDisposable disposable = _buttonStartSlowly as IDisposable;
+                if (disposable != null) {
+                    disposable.Dispose();
+                }
+                _buttonStartSlowly = null;
+            }
+            
+            // Unsubscribe and dispose Options button
+            if (_buttonOptions != null) {
+                _buttonOptions.Click -= HandleOptionsClicked;
+                IDisposable disposable = _buttonOptions as IDisposable;
+                if (disposable != null) {
+                    disposable.Dispose();
+                }
+                _buttonOptions = null;
+            }
+            
+            // Unsubscribe and dispose Back button
+            if (_buttonOptionsBack != null) {
+                _buttonOptionsBack.Click -= HandleOptionsButtonBack;
+                IDisposable disposable = _buttonOptionsBack as IDisposable;
+                if (disposable != null) {
+                    disposable.Dispose();
+                }
+                _buttonOptionsBack = null;
+            }
+            
+            // Unsubscribe and dispose music slider
+            if (_sliderMusic != null) {
+                _sliderMusic.ValueChanged -= HandleMusicSliderValueChanged;
+                _sliderMusic.ValueChangeCompleted -= HandleMusicSliderValueChangeCompleted;
+                IDisposable disposable = _sliderMusic as IDisposable;
+                if (disposable != null) {
+                    disposable.Dispose();
+                }
+                _sliderMusic = null;
+            }
+            
+            // Unsubscribe and dispose sound effect slider
+            if (_sliderSfx != null) {
+                _sliderSfx.ValueChanged -= HandleSfxSliderChanged;
+                _sliderSfx.ValueChangeCompleted -= HandleSfxSliderChangeCompleted;
+                IDisposable disposable = _sliderSfx as IDisposable;
+                if (disposable != null) {
+                    disposable.Dispose();
+                }
+                _sliderSfx = null;
+            }
+            
+            // Note: _panelTitleScreenButtons and _panelOptions are not disposed here
+            // because they are Gum framework controls not controlled by us.
+            // Their children have already been explicitly unsubscribed and disposed above.
+        }
+        
+        base.Dispose(flagDisposing);
     }
 }

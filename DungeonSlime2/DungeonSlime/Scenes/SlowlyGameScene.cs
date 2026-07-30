@@ -1,5 +1,6 @@
 using System;
 using DungeonSlime.GameObjects;
+using DungeonSlime.Input;
 using DungeonSlime.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
@@ -494,6 +495,17 @@ public class SlowlyGameScene : Scene {
     protected override void Dispose(bool flagDisposing) {
         if (flagDisposing) {
             // Unsubscribe events to avoid leaks.
+            if (_ui != null) {
+                _ui.ResumeButtonClick -= OnResumeButtonClicked;
+                _ui.RetryButtonClick -= OnRetryButtonClicked;
+                _ui.QuitButtonClick -= OnQuitButtonClicked;
+                
+                IDisposable disposableUI = _ui as IDisposable;
+                if (disposableUI != null) {
+                    disposableUI.Dispose();
+                }
+                _ui = null;
+            }
             if (_slime != null) {
                 _slime.BodyCollision -= OnSlimeBodyCollision;
             }

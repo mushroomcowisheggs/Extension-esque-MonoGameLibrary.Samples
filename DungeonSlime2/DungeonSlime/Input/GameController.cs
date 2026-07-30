@@ -3,60 +3,39 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using MonoGameLibrary.Extensions.Input;
 
-namespace DungeonSlime;
+namespace DungeonSlime.Input;
 
 /// <summary>
 /// Provides a game-specific input abstraction that maps physical inputs
 /// to game actions, bridging our input system with game-specific functionality.
 /// </summary>
 public class GameController : IGameController {
-    private readonly IInputService _serviceInput;
+    private readonly IInputMappingService _serviceInputMapping;
     
-    public GameController(IInputService serviceInput) {
-        if (serviceInput == null) {
-            throw new ArgumentNullException(nameof(serviceInput));
+    public GameController(IInputMappingService serviceInputMapping) {
+        if (serviceInputMapping == null) {
+            throw new ArgumentNullException(nameof(serviceInputMapping));
         }
-        _serviceInput = serviceInput;
+        _serviceInputMapping = serviceInputMapping;
     }
     
     /// <inheritdoc />
     public Vector2 GetDirection() {
-        if (_serviceInput.WasKeyJustPressed(KeyCode.Up) || _serviceInput.WasKeyJustPressed(KeyCode.W) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.DPadUp) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.LeftThumbstickUp)
-        ) {
-            return -Vector2.UnitY;
-        }
-        if (_serviceInput.WasKeyJustPressed(KeyCode.Down) || _serviceInput.WasKeyJustPressed(KeyCode.S) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.DPadDown) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.LeftThumbstickDown)
-        ) {
-            return Vector2.UnitY;
-        }
-        if (_serviceInput.WasKeyJustPressed(KeyCode.Left) || _serviceInput.WasKeyJustPressed(KeyCode.A) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.DPadLeft) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.LeftThumbstickLeft)
-        ) {
-            return -Vector2.UnitX;
-        }
-        if (_serviceInput.WasKeyJustPressed(KeyCode.Right) || _serviceInput.WasKeyJustPressed(KeyCode.D) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.DPadRight) ||
-            _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.LeftThumbstickRight)
-        ) {
-            return Vector2.UnitX;
-        }
-        return Vector2.Zero;
+        return _serviceInputMapping.GetActionDirection(
+            GameAction.MoveUp,
+            GameAction.MoveDown,
+            GameAction.MoveLeft,
+            GameAction.MoveRight
+        );
     }
     
     /// <inheritdoc />
     public bool Pause() {
-        return _serviceInput.WasKeyJustPressed(KeyCode.Escape) ||
-        _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.Start);
+        return _serviceInputMapping.IsActionPressed(GameAction.Pause);
     }
     
     /// <inheritdoc />
     public bool Action() {
-        return _serviceInput.WasKeyJustPressed(KeyCode.Enter) ||
-        _serviceInput.WasButtonJustPressed(MonoGameLibrary.Extensions.Input.PlayerIndex.One, MonoGameLibrary.Extensions.Input.GamePadButton.A);
+        return _serviceInputMapping.IsActionPressed(GameAction.Confirm);
     }
 }

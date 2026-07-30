@@ -1,4 +1,6 @@
 ﻿using System;
+using DungeonSlime.Diagnostics;
+using DungeonSlime.Input;
 using DungeonSlime.Scenes;
 using DungeonSlime.States;
 using Microsoft.Xna.Framework;
@@ -61,113 +63,139 @@ public class Game1 : Game {
         var loggerConsole = new ConsoleLogger();
         var loggerFile = new FileLogger();
         _logger = loggerFile;
-        builder.UseDefaultServices();
-        builder.UseLogger(loggerFile, true);
-        builder.UseAudio();
-        builder.UseInput();
-        builder.UseStates();
-        
-        _serviceGlobalContent = new MonoGameContentService(Content);
-        builder.RegisterService<IContentService>(_serviceGlobalContent);
-        
-        var factoryContent = new MonoGameContentServiceFactory(Content.ServiceProvider, Content.RootDirectory);
-        builder.RegisterService<IContentServiceFactory>(factoryContent);
-        
-        var logger = builder.GetService<ILogger>();
-        var profiler = builder.TryGetService<IProfiler>(out var profilerInstance) 
-        ? new Optional<IProfiler>(profilerInstance) 
-        : default(Optional<IProfiler>);
-        var serviceScene = new SceneService(
-            _serviceGlobalContent, 
-            factoryContent: factoryContent, 
-            logger: new Optional<ILogger>(loggerFile), 
-            profiler: profiler
-        );
-        builder.RegisterService<ISceneService>(serviceScene);
-        builder.AddModule(new SceneModule(serviceScene));
-        
-        builder.UseGum(this, Content, DefaultVisualsVersion.V3);
-        
-        // Register game controller service
-        var serviceInput = builder.GetService<IInputService>();
-        var controllerGame = new GameController(serviceInput);
-        builder.RegisterService<IGameController>(controllerGame);
-        
-        _host = builder.Build();
-        _host.OnError = delegate(Exception exception, string context) {
-            System.Diagnostics.Trace.WriteLine($"Error in {context}: {exception}");
-        };
-        
-        // Load adapter content: 
-        var batchSprite = new SpriteBatch(GraphicsDevice);
-        _adapter = new MonoGameAdapter(_host, batchSprite);
-        
-        _adapter.LoadContent(_serviceGlobalContent);
-        
-        base.Initialize();
-        
-        // Initialize gum: 
-        _boundsScreen = GraphicsDevice.PresentationParameters.Bounds;
-        
-        // Initialize the Gum UI service
-        var serviceUserInterface = _host.Services.Get<IUserInterfaceService>();
-        
-        // The assets created for the UI were done so at 1/4th the size to keep the size of the
-        // texture atlas small.  So we will set the default canvas size to be 1/4th the size of
-        // the game's resolution then tell gum to zoom in by a factor of 4.
-        float widthCanvas = GraphicsDevice.PresentationParameters.BackBufferWidth / 4.0f;
-        float heightCanvas = GraphicsDevice.PresentationParameters.BackBufferHeight / 4.0f;
-        serviceUserInterface.SetCanvas(widthCanvas, heightCanvas, 4.0f);
-        
-        // Register input for UI control.
-        serviceUserInterface.ConfigureInput(flagEnableKeyboard: true, flagEnableGamepad: true);
-        
-        if (serviceUserInterface is ITabNavigationSupport supportTab) {
-            // Customize the tab reverse UI navigation to also trigger when the keyboard
-            // Up arrow key is pushed. 
-            supportTab.AddTabReverseKey(KeyCode.Up);
-            // Customize the tab UI navigation to also trigger when the keyboard
-            // Down arrow key is pushed.
-            supportTab.AddTabForwardKey(KeyCode.Down);
-        }
-        
-        
-        // Start title scene: 
-        // Start the game with the splash state before setting the title scene.
-        var serviceState = _host.Services.Get<IStateService>();
-        // serviceScene = _host.Services.Get<ISceneService>();
-        var serviceAudio = _host.Services.Get<IAudioService>();
-        // serviceInput = _host.Services.Get<IInputService>();
-        // logger = _host.Services.Get<ILogger>();
-        // profiler = _host.Services.TryGet<IProfiler>(out var profilerInstance) ? new Optional<IProfiler>(profilerInstance) : default(Optional<IProfiler>);
-        // controllerGame = _host.Services.Get<IGameController>();
-        
-        Func<IContentService, Scene> factoryTitleScene = delegate(IContentService serviceContent) {
-            return new TitleScene(
-                serviceContent,
-                serviceAudio,
-                serviceInput,
-                serviceScene,
-                serviceUserInterface,
-                Exit,
-                _boundsScreen,
-                controllerGame,
-                new Optional<ILogger>(_logger),
+        try {
+            builder.UseDefaultServices();
+            builder.UseLogger(loggerFile, true);
+            builder.UseAudio();
+            builder.UseInput();
+            builder.UseInputMapping();
+            builder.UseStates();
+            builder.UseGum(this, Content, DefaultVisualsVersion.V3);
+            
+            _serviceGlobalContent = new MonoGameContentService(Content);
+            builder.RegisterService<IContentService>(_serviceGlobalContent);
+            
+            var factoryContent = new MonoGameContentServiceFactory(Content.ServiceProvider, Content.RootDirectory);
+            builder.RegisterService<IContentServiceFactory>(factoryContent);
+            
+            var logger = builder.GetService<ILogger>();
+            var profiler = builder.TryGetService<IProfiler>(out var profilerInstance) 
+            ? new Optional<IProfiler>(profilerInstance) 
+            : default(Optional<IProfiler>);
+            builder.UseScenes(
+                serviceContent: null, 
+                factoryContent: new Optional<IContentServiceFactory>(factoryContent), 
+                logger: new Optional<ILogger>(loggerFile), 
+                profiler: profiler
+            );
+            var serviceScene = builder.GetService<ISceneService>();
+            var serviceInput = builder.GetService<IInputService>();
+            
+            // Register game controller service
+            var serviceMapping = builder.GetService<IInputMappingService>();
+            serviceMapping.BindKey(GameAction.MoveUp, KeyCode.Up);
+            serviceMapping.BindKey(GameAction.MoveUp, KeyCode.W);
+            serviceMapping.BindKey(GameAction.MoveDown, KeyCode.Down);
+            serviceMapping.BindKey(GameAction.MoveDown, KeyCode.S);
+            serviceMapping.BindKey(GameAction.MoveLeft, KeyCode.Left);
+            serviceMapping.BindKey(GameAction.MoveLeft, KeyCode.A);
+            serviceMapping.BindKey(GameAction.MoveRight, KeyCode.Right);
+            serviceMapping.BindKey(GameAction.MoveRight, KeyCode.D);
+            serviceMapping.BindKey(GameAction.Pause, KeyCode.Escape);
+            serviceMapping.BindKey(GameAction.Confirm, KeyCode.Enter);
+            serviceMapping.BindButton(GameAction.MoveUp, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadUp);
+            serviceMapping.BindButton(GameAction.MoveUp, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickUp);
+            serviceMapping.BindButton(GameAction.MoveDown, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadDown);
+            serviceMapping.BindButton(GameAction.MoveDown, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickDown);
+            serviceMapping.BindButton(GameAction.MoveLeft, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadLeft);
+            serviceMapping.BindButton(GameAction.MoveLeft, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickLeft);
+            serviceMapping.BindButton(GameAction.MoveRight, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadRight);
+            serviceMapping.BindButton(GameAction.MoveRight, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickRight);
+            serviceMapping.BindButton(GameAction.Pause, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.Start);
+            serviceMapping.BindButton(GameAction.Confirm, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.A);
+            
+            var controllerGame = new GameController(serviceMapping);
+            builder.RegisterService<IGameController>(controllerGame);
+            
+            _host = builder.Build();
+            _host.OnError = delegate(Exception exception, string context) {
+                System.Diagnostics.Trace.WriteLine($"Error in {context}: {exception}");
+            };
+            
+            // Load adapter content: 
+            var batchSprite = new SpriteBatch(GraphicsDevice);
+            _adapter = new MonoGameAdapter(_host, batchSprite);
+            
+            _adapter.LoadContent(_serviceGlobalContent);
+            
+            base.Initialize();
+            
+            // Initialize gum: 
+            _boundsScreen = GraphicsDevice.PresentationParameters.Bounds;
+            
+            // Initialize the Gum UI service
+            var serviceUserInterface = _host.Services.Get<IUserInterfaceService>();
+            
+            // The assets created for the UI were done so at 1/4th the size to keep the size of the
+            // texture atlas small.  So we will set the default canvas size to be 1/4th the size of
+            // the game's resolution then tell gum to zoom in by a factor of 4.
+            float widthCanvas = GraphicsDevice.PresentationParameters.BackBufferWidth / 4.0f;
+            float heightCanvas = GraphicsDevice.PresentationParameters.BackBufferHeight / 4.0f;
+            serviceUserInterface.SetCanvas(widthCanvas, heightCanvas, 4.0f);
+            
+            // Register input for UI control.
+            serviceUserInterface.ConfigureInput(flagEnableKeyboard: true, flagEnableGamepad: true);
+            
+            if (serviceUserInterface is ITabNavigationSupport supportTab) {
+                // Customize the tab reverse UI navigation to also trigger when the keyboard
+                // Up arrow key is pushed. 
+                supportTab.AddTabReverseKey(KeyCode.Up);
+                // Customize the tab UI navigation to also trigger when the keyboard
+                // Down arrow key is pushed.
+                supportTab.AddTabForwardKey(KeyCode.Down);
+            }
+            
+            
+            // Start title scene: 
+            // Start the game with the splash state before setting the title scene.
+            var serviceState = _host.Services.Get<IStateService>();
+            // serviceScene = _host.Services.Get<ISceneService>();
+            var serviceAudio = _host.Services.Get<IAudioService>();
+            // serviceInput = _host.Services.Get<IInputService>();
+            // logger = _host.Services.Get<ILogger>();
+            // profiler = _host.Services.TryGet<IProfiler>(out var profilerInstance) ? new Optional<IProfiler>(profilerInstance) : default(Optional<IProfiler>);
+            // controllerGame = _host.Services.Get<IGameController>();
+            
+            Func<IContentService, Scene> factoryTitleScene = delegate(IContentService serviceContent) {
+                return new TitleScene(
+                    serviceContent,
+                    serviceAudio,
+                    serviceInput,
+                    serviceScene,
+                    serviceUserInterface,
+                    Exit,
+                    _boundsScreen,
+                    controllerGame,
+                    new Optional<ILogger>(_logger),
+                    profiler
+                );
+            };
+            
+            var stateSplash = new SplashState(
+                _serviceGlobalContent, 
+                serviceInput, 
+                serviceScene, 
+                serviceUserInterface, 
+                _boundsScreen, 
+                _logger, 
+                factoryTitleScene, 
                 profiler
             );
-        };
-        
-        var stateSplash = new SplashState(
-            _serviceGlobalContent, 
-            serviceInput, 
-            serviceScene, 
-            serviceUserInterface, 
-            _boundsScreen, 
-            _logger, 
-            factoryTitleScene, 
-            profiler
-        );
-        serviceState.Push(stateSplash);
+            serviceState.Push(stateSplash);
+        } catch (Exception ex) {
+            _logger.Error("Initialize failed", ex);
+        }
+
     }
     
     protected override void LoadContent() {

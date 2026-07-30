@@ -148,4 +148,17 @@ internal class AnimatedButton : Button {
     private void HandleRollOn(object sender, EventArgs arguments) {
         IsFocused = true;
     }
+    
+    /// <summary>
+    /// Disposes the button and releases event subscriptions to prevent memory leaks. 
+    /// </summary>
+    public void Dispose() {
+        // Unsubscribe from keyboard events
+        KeyDown -= HandleKeyDown;
+        
+        // Unsubscribe from mouse hover events
+        if (Visual != null) {
+            Visual.RollOn -= HandleRollOn;
+        }
+    }
 }

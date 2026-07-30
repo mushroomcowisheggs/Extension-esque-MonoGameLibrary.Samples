@@ -369,9 +369,8 @@ namespace MonoGameLibrary.Core.Hosting {
         /// <summary>
         /// Releases the unmanaged resources used by the host and optionally releases the managed resources. 
         /// </summary>
-        /// <param name="disposing">If <c>true</c>, releases both managed and unmanaged resources. </param>
-        protected virtual void Dispose(bool disposing)
-        {
+        /// <param name="flagDisposing">If <c>true</c>, releases both managed and unmanaged resources. </param>
+        protected virtual void Dispose(bool flagDisposing) {
             if (_flagDisposed) {
                 return;
             }
@@ -398,7 +397,7 @@ namespace MonoGameLibrary.Core.Hosting {
             _eventOperationsIdle.Wait();
 
             // Dispose all modules that implement IDisposable.
-            if (disposing) {
+            if (flagDisposing) {
                 // Step 1: Dispose all modules first (they may hold references to content resources)
                 foreach (object module in _listAllModules) {
                     if (module is IDisposable disposable) {

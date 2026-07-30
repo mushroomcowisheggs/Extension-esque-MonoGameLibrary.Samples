@@ -1,4 +1,6 @@
 ﻿using System;
+using DungeonSlime.Diagnostics;
+using DungeonSlime.Input;
 using DungeonSlime.Scenes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -64,6 +66,8 @@ public class Game1 : Game {
         builder.UseLogger(loggerFile, true);
         builder.UseAudio();
         builder.UseInput();
+        builder.UseInputMapping();
+        builder.UseGum(this, Content, DefaultVisualsVersion.V3);
         
         _serviceGlobalContent = new MonoGameContentService(Content);
         builder.RegisterService<IContentService>(_serviceGlobalContent);
@@ -75,20 +79,39 @@ public class Game1 : Game {
         var profiler = builder.TryGetService<IProfiler>(out var profilerInstance) 
         ? new Optional<IProfiler>(profilerInstance) 
         : default(Optional<IProfiler>);
-        var serviceScene = new SceneService(
-            _serviceGlobalContent, 
-            factoryContent: factoryContent, 
+        builder.UseScenes(
+            serviceContent: null, 
+            factoryContent: new Optional<IContentServiceFactory>(factoryContent), 
             logger: new Optional<ILogger>(loggerFile), 
             profiler: profiler
         );
-        builder.RegisterService<ISceneService>(serviceScene);
-        builder.AddModule(new SceneModule(serviceScene));
-        
-        builder.UseGum(this, Content, DefaultVisualsVersion.V3);
+        var serviceScene = builder.GetService<ISceneService>();
+        var serviceInput = builder.GetService<IInputService>();
         
         // Register game controller service
-        var serviceInput = builder.GetService<IInputService>();
-        var controllerGame = new GameController(serviceInput);
+        var serviceMapping = builder.GetService<IInputMappingService>();
+        serviceMapping.BindKey(GameAction.MoveUp, KeyCode.Up);
+        serviceMapping.BindKey(GameAction.MoveUp, KeyCode.W);
+        serviceMapping.BindKey(GameAction.MoveDown, KeyCode.Down);
+        serviceMapping.BindKey(GameAction.MoveDown, KeyCode.S);
+        serviceMapping.BindKey(GameAction.MoveLeft, KeyCode.Left);
+        serviceMapping.BindKey(GameAction.MoveLeft, KeyCode.A);
+        serviceMapping.BindKey(GameAction.MoveRight, KeyCode.Right);
+        serviceMapping.BindKey(GameAction.MoveRight, KeyCode.D);
+        serviceMapping.BindKey(GameAction.Pause, KeyCode.Escape);
+        serviceMapping.BindKey(GameAction.Confirm, KeyCode.Enter);
+        serviceMapping.BindButton(GameAction.MoveUp, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadUp);
+        serviceMapping.BindButton(GameAction.MoveUp, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickUp);
+        serviceMapping.BindButton(GameAction.MoveDown, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadDown);
+        serviceMapping.BindButton(GameAction.MoveDown, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickDown);
+        serviceMapping.BindButton(GameAction.MoveLeft, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadLeft);
+        serviceMapping.BindButton(GameAction.MoveLeft, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickLeft);
+        serviceMapping.BindButton(GameAction.MoveRight, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.DPadRight);
+        serviceMapping.BindButton(GameAction.MoveRight, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.LeftThumbstickRight);
+        serviceMapping.BindButton(GameAction.Pause, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.Start);
+        serviceMapping.BindButton(GameAction.Confirm, MonoGameLibrary.Extensions.Input.PlayerIndex.One, GamePadButton.A);
+        
+        var controllerGame = new GameController(serviceMapping);
         builder.RegisterService<IGameController>(controllerGame);
         
         _host = builder.Build();

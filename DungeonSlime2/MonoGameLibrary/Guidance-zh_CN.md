@@ -608,7 +608,7 @@ builder.AddModule(new MyModule(logger, profiler));
 2. **将模块放在与功能对应的命名空间下**，例如 `MonoGameLibrary.Audio`、`MonoGameLibrary.Scenes`。
 3. **避免使用 `Manager` 或 `System` 等模糊后缀**，除非确实管理多个子组件。
 4. **每个模块应放在单独的文件中**，文件名与类名一致。
-5. **公共 API 方法名应动词开头**，如 `PlaySound`、`LoadScene`。
+5. **公共 API 方法名应动词开头**，如 `PlayAudioClip`、`LoadScene`。
 6. **一切使用小驼峰命名的私有字段应以中心词开头**，中心词通常为对应公共API的结尾词，如`_timeFrame`、`_serviceContent`、`_logger`。也就是声明式命名，变量名 = 类别词 + 限定语。它反映的是“这个数据是什么”。
 7. **局部字段同样遵循中心词开头的声明式命名**，如`timeFrame`、`serviceContent`、`logger`。
 8. **公开字段通常直接使用自然语言顺序命名**，如`FrameTime`、`IContentService`、`Logger`。也就是代入式命名，字段名 = 对象名（或隐含的上下文对象）+ 属性名。它反映的是“这个数据是哪个对象的哪个字段”，而非“我们定义一个字段，然后进行限定”。
@@ -723,7 +723,7 @@ public class AudioModule : ILoadable, IUpdateable, IDisposable {
     /// </summary>
     /// <param name="name">The asset name.</param>
     /// <exception cref="InvalidOperationException">Thrown if the sound has not been loaded.</exception>
-    public void PlaySound(string name) { /* ... */ }
+    public void PlayAudioClip(string name) { /* ... */ }
 }
 ```
 
@@ -745,14 +745,14 @@ public class AudioModule : ILoadable, IUpdateable, IDisposable {
 ```csharp
 // Public Contract (in MonoGameLibrary.Extensions.Audio)
 public interface IAudioService : IUpdateable {
-    void PlaySound(string nameAsset);
+    void PlayAudioClip(string nameAsset);
 }
 
 // Public Implementation (in MonoGameLibrary.Adapters.MonoGame.Audio)
 public class AudioModule : IAudioService, ILoadable, IDisposable {
     private readonly IContentService _serviceContent;
     public AudioModule(IContentService serviceContent) { /* ... */ }
-    public void PlaySound(string nameAsset) { /* ... */ }
+    public void PlayAudioClip(string nameAsset) { /* ... */ }
 }
 
 // Alternative: Factory Pattern (if implementation must be internal)

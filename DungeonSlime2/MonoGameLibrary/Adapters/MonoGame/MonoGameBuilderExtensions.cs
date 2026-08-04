@@ -1,4 +1,5 @@
 using System;
+using MonoGameLibrary.Core;
 using MonoGameLibrary.Core.Hosting;
 using MonoGameLibrary.Adapters.MonoGame.Audio;
 using MonoGameLibrary.Adapters.MonoGame.Input;
@@ -8,28 +9,18 @@ using MonoGameLibrary.Extensions.Input;
 namespace MonoGameLibrary.Adapters.MonoGame {
     public static class MonoGameBuilderExtensions {
         /// <summary>
-        /// Registers the audio service and module.
+        /// Registers the audio service and module. 
         /// </summary>
-        /// <param name="builder">The game builder instance.</param>
-        /// <returns>The game builder instance for chaining.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> is null.</exception>
-        public static GameBuilder UseAudio(this GameBuilder builder) {
+        /// <param name="builder">The game builder instance. </param>
+        /// <param name="serviceContent">The content service used by scenes. If null, the builder will try to resolve one from its registered services. </param>
+        /// <returns>The game builder instance for chaining. </returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="builder"/> is null. </exception>
+        public static GameBuilder UseAudio(this GameBuilder builder, Optional<IContentService> serviceContent = default) {
             if (builder == null) {
                 throw new System.ArgumentNullException(nameof(builder));
             }
             
-            var serviceAudio = new AudioService();
-            builder.RegisterService<IAudioService>(serviceAudio);
-            builder.AddModule(new AudioModule(serviceAudio));
-            return builder;
-        }
-        
-        public static GameBuilder UseAudio(this GameBuilder builder, IContentService serviceContent = null) {
-            if (builder == null) {
-                throw new System.ArgumentNullException(nameof(builder));
-            }
-            
-            var serviceAudio = new AudioService(serviceContent);
+            var serviceAudio = new AudioService(serviceContent.HasValue ? serviceContent.Value : null);
             builder.RegisterService<IAudioService>(serviceAudio);
             builder.AddModule(new AudioModule(serviceAudio));
             return builder;

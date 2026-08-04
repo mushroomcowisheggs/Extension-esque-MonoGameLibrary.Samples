@@ -84,7 +84,7 @@ namespace MonoGameLibrary.Core.Hosting {
             }
             _registryService = registryService;
         }
-
+        
         /// <inheritdoc />
         public void AddModule(object module) {
             if (module == null) {
@@ -160,7 +160,7 @@ namespace MonoGameLibrary.Core.Hosting {
                     // Snapshot to allow concurrent AddModule calls during loading.
                     modulesToLoad = new List<ILoadable>(_listLoadableModules);
                 }
-
+                
                 try {
                     foreach (ILoadable module in modulesToLoad) {
                         SafeExecute("LoadContent", module, module.LoadContent);
@@ -175,7 +175,7 @@ namespace MonoGameLibrary.Core.Hosting {
                     lock (_lock) {
                         _flagIsFaulted = true;
                     }
-
+                    
                     // Attempt to roll back any partially loaded content.
                     if (_serviceContent.HasValue) {
                         try { _serviceContent.Value.Dispose(); } catch (Exception) { }
@@ -187,7 +187,7 @@ namespace MonoGameLibrary.Core.Hosting {
                 ExitOperation();
             }
         }
-
+        
         /// <inheritdoc />
         public void Update(FrameTime timeFrame) {
             EnterOperation();
@@ -392,10 +392,10 @@ namespace MonoGameLibrary.Core.Hosting {
                 // Prevent new operations from entering.
                 _flagDisposing = true;
             }
-
+            
             // Wait for all currently active operations to finish without burning CPU cycles.
             _eventOperationsIdle.Wait();
-
+            
             // Dispose all modules that implement IDisposable.
             if (flagDisposing) {
                 // Step 1: Dispose all modules first (they may hold references to content resources)
@@ -411,7 +411,7 @@ namespace MonoGameLibrary.Core.Hosting {
                         }
                     }
                 }
-
+                
                 // Step 2: Unload all content (modules have released their references)
                 if (_serviceContent.HasValue) {
                     try {
@@ -422,7 +422,7 @@ namespace MonoGameLibrary.Core.Hosting {
                         } catch { }
                     }
                 }
-
+                
                 // Step 3: Dispose the content service itself
                 if (_serviceContent.HasValue) {
                     try {
@@ -433,22 +433,21 @@ namespace MonoGameLibrary.Core.Hosting {
                         } catch { }
                     }
                 }
-                
-                // Finally mark as fully disposed and clear internal lists.
-                lock (_lock) {
-                    _flagDisposed = true;
-                    _setModule.Clear();
-                    _listAllModules.Clear();
-                    _listLoadableModules.Clear();
-                    _listUpdateableModules.Clear();
-                    _listDrawableModules.Clear();
-                    _cachedUpdateablesSorted.Clear();
-                    _cachedDrawablesSorted.Clear();
-                    _backBufferUpdateables.Clear();
-                    _backBufferDrawables.Clear();
-                    _flagUpdateOrderDirty = true;
-                    _flagDrawOrderDirty = true;
-                }
+            }
+            // Finally mark as fully disposed and clear internal lists.
+            lock (_lock) {
+                _flagDisposed = true;
+                _setModule.Clear();
+                _listAllModules.Clear();
+                _listLoadableModules.Clear();
+                _listUpdateableModules.Clear();
+                _listDrawableModules.Clear();
+                _cachedUpdateablesSorted.Clear();
+                _cachedDrawablesSorted.Clear();
+                _backBufferUpdateables.Clear();
+                _backBufferDrawables.Clear();
+                _flagUpdateOrderDirty = true;
+                _flagDrawOrderDirty = true;
             }
         }
     }

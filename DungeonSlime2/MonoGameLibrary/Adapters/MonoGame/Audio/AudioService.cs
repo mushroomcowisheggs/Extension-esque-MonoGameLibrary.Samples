@@ -117,13 +117,13 @@ namespace MonoGameLibrary.Adapters.MonoGame.Audio {
         }
         
         /// <inheritdoc />
-        public void PlayAudioClip(string nameAsset, float volume = 1f, float pitch = 0f, float pan = 0f, bool loop = false) {
+        public void PlayAudioClip(string nameAsset, float volume = 1f, float pitch = 0f, float pan = 0f, bool flagShouldLoop = false) {
             if (string.IsNullOrWhiteSpace(nameAsset)) {
                 throw new ArgumentException("Asset name cannot be empty.", nameof(nameAsset));
             }
 
             IAudioClip clip = LoadClip(nameAsset);
-            PlayAudioClip(clip, volume, pitch, pan, loop);
+            PlayAudioClip(clip, volume, pitch, pan, flagShouldLoop);
         }
         
         /// <inheritdoc />

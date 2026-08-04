@@ -65,7 +65,7 @@ namespace MonoGameLibrary.Extensions {
         /// <exception cref="InvalidOperationException">Thrown if no <see cref="IContentService"/> can be resolved. </exception>
         public static GameBuilder UseScenes(
                 this GameBuilder builder, 
-                IContentService serviceContent = null, 
+                Optional<IContentService> serviceContent = default, 
                 Optional<IContentServiceFactory> factoryContent = default, 
                 Optional<ILogger> logger = default, 
                 Optional<IProfiler> profiler = default
@@ -75,9 +75,9 @@ namespace MonoGameLibrary.Extensions {
             }
             
             IContentService serviceResolvedContent;
-            if (serviceContent != null) {
-                serviceResolvedContent = serviceContent;
-                builder.RegisterService<IContentService>(serviceContent);
+            if (serviceContent.HasValue) {
+                serviceResolvedContent = serviceContent.Value;
+                builder.RegisterService<IContentService>(serviceResolvedContent);
             } else if (!builder.TryGetService<IContentService>(out serviceResolvedContent)) {
                 throw new System.InvalidOperationException("No IContentService is registered. Register one before calling UseScenes.");
             }

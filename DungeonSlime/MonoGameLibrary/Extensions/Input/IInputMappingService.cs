@@ -21,9 +21,9 @@ namespace MonoGameLibrary.Extensions.Input {
         /// </summary>
         /// <typeparam name="T">Action enum type.</typeparam>
         /// <param name="action">The action to bind.</param>
-        /// <param name="player">The player index.</param>
+        /// <param name="indexPlayer">The player index.</param>
         /// <param name="button">The button that triggers the action.</param>
-        void BindButton<T>(T action, PlayerIndex player, GamePadButton button) where T : Enum;
+        void BindButton<T>(T action, PlayerIndex indexPlayer, GamePadButton button) where T : Enum;
         
         /// <summary>
         /// Checks whether the action was just pressed (edge-triggered) this frame.

@@ -15,7 +15,9 @@ namespace DungeonSlime.UI;
 /// A custom button implementation that inherits from Gum's Button class to provide
 /// animated visual feedback when focused.
 /// </summary>
-internal class AnimatedButton : Button {
+internal class AnimatedButton : Button, IDisposable {
+    private bool _flagDisposed;
+    
     /// <summary>
     /// Creates a new AnimatedButton instance using graphics from the specified texture atlas.
     /// </summary>
@@ -153,6 +155,9 @@ internal class AnimatedButton : Button {
     /// Disposes the button and releases event subscriptions to prevent memory leaks. 
     /// </summary>
     public void Dispose() {
+        if (_flagDisposed) { return; }
+        _flagDisposed = true;
+        
         // Unsubscribe from keyboard events
         KeyDown -= HandleKeyDown;
         

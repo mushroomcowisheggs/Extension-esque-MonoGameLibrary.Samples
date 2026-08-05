@@ -2,8 +2,7 @@ using Microsoft.Xna.Framework;
 
 namespace DungeonSlime.GameObjects;
 
-public struct SlimeSegment
-{
+public struct SlimeSegment {
     /// <summary>
     /// The position this slime segment is at before the movement cycle occurs.
     /// </summary>
@@ -22,5 +21,5 @@ public struct SlimeSegment
     /// <summary>
     /// The opposite direction this slime segment is moving.
     /// </summary>
-    public Vector2 ReverseDirection => new Vector2(-Direction.X, -Direction.Y);
+    public Vector2 ReverseDirection { get { return new Vector2(-Direction.X, -Direction.Y); } }
 }

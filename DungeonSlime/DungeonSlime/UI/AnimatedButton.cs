@@ -155,15 +155,25 @@ internal class AnimatedButton : Button, IDisposable {
     /// Disposes the button and releases event subscriptions to prevent memory leaks. 
     /// </summary>
     public void Dispose() {
-        if (_flagDisposed) { return; }
-        _flagDisposed = true;
-        
-        // Unsubscribe from keyboard events
-        KeyDown -= HandleKeyDown;
-        
-        // Unsubscribe from mouse hover events
-        if (Visual != null) {
-            Visual.RollOn -= HandleRollOn;
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+    
+    protected virtual void Dispose(bool flagDisposing) {
+        if (_flagDisposed) {
+            return;
         }
+        
+        if (flagDisposing) {
+            // Unsubscribe from keyboard events
+            KeyDown -= HandleKeyDown;
+            
+            // Unsubscribe from mouse hover events
+            if (Visual != null) {
+                Visual.RollOn -= HandleRollOn;
+            }
+        }
+        
+        _flagDisposed = true;
     }
 }
